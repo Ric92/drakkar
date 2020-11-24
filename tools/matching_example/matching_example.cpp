@@ -32,6 +32,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
@@ -54,22 +55,43 @@ struct intrinsics;
 
 int main(int argc, char const *argv[]) {
 
-    drakkar::RealSense camera;
-    camera.init();
-
-    cv::namedWindow("RGB", CV_WINDOW_AUTOSIZE);
-    cv::namedWindow("DEPTH", CV_WINDOW_AUTOSIZE);
-    cv::startWindowThread();
-
     // initialize pcl visualization
     pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
     viewer.setBackgroundColor(100, 100, 100, 0);
     viewer.addCoordinateSystem(0.05, "base", 0);
     viewer.addCoordinateSystem(0.02, "current_pose", 0);
-    viewer.setCameraPosition(1.59696, 0.285761, -3.40482, -0.084178, -0.989503,
-                             -0.117468);
+    viewer.setCameraPosition(1.59696, 0.285761, -3.40482, -0.084178, -0.989503, -0.117468);
 
-    int index = 0;                            
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr body (new pcl::PointCloud<pcl::PointXYZRGB>);
+    if(argc > 1){
+        pcl::io::loadPCDFile (argv[1], *body);
+        viewer.addPointCloud<pcl::PointXYZRGB>(body, std::string("Entity"));
+        float timeout = 10;
+        float currentTime = 0;
+        auto start = std::chrono::high_resolution_clock::now();
+
+        while(currentTime < timeout){
+            auto finish = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = finish - start;
+            currentTime = elapsed.count();
+            viewer.spinOnce(1, true);
+        }
+        
+    }else{
+        std::cout << "Error usage ./matching_example model_directory" << std::endl;
+        return 0;
+    }
+
+    drakkar::RealSense camera;
+    camera.init();
+
+
+    cv::namedWindow("RGB", CV_WINDOW_AUTOSIZE);
+    cv::namedWindow("DEPTH", CV_WINDOW_AUTOSIZE);
+    cv::startWindowThread();
+
+
+    
     while (true) {
         camera.grab();
         cv::Mat color, depth;
@@ -91,8 +113,7 @@ int main(int argc, char const *argv[]) {
         viewer.updatePointCloudPose(std::string("Entity"), Eigen::Affine3f::Identity());
         viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, std::string("Entity"));
         viewer.spinOnce(1, true);
-        index++;
+        
     }
-
     return 0;
 }

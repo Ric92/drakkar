@@ -71,41 +71,39 @@ bool RealSense::init() {
     frames = pipe.wait_for_frames();
 }
 
-bool RealSense::grab(){
+bool RealSense::grab() {
     frames = pipe.wait_for_frames();
-
     frames = rsAlign->process(frames);
 
     color_frame = frames.get_color_frame();
     depth_frame = frames.get_depth_frame();
-    color_ = cv::Mat(cv::Size(rsColorIntrinsic.width, rsColorIntrinsic.height), CV_8UC3, (void*)color_frame.get_data(), cv::Mat::AUTO_STEP);
-    depth_ = cv::Mat(cv::Size(rsDepthIntrinsic.width, rsDepthIntrinsic.height), CV_16U, (uchar*) depth_frame.get_data(), cv::Mat::AUTO_STEP);
+    color_ = cv::Mat(cv::Size(rsColorIntrinsic.width, rsColorIntrinsic.height), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
+    depth_ = cv::Mat(cv::Size(rsDepthIntrinsic.width, rsDepthIntrinsic.height), CV_16U, (uchar *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
     computed_ = true;
     return true;
 }
 
-bool RealSense::rgb(cv::Mat &_color){
-    if(computed_){
+bool RealSense::rgb(cv::Mat &_color) {
+    if (computed_) {
         std::lock_guard<std::mutex> lock(dataLock_);
         color_.copyTo(_color);
         return true;
-    }else{
+    } else {
         return false;
     }
 }
 
-bool RealSense::depth(cv::Mat &_depth){
-    if(computed_){
+bool RealSense::depth(cv::Mat &_depth) {
+    if (computed_) {
         std::lock_guard<std::mutex> lock(dataLock_);
         depth_.copyTo(_depth);
         return true;
-    }else{
+    } else {
         return false;
     }
 }
 
-bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud){
-
+bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
     if (realsense_calc) {
         rs2::pointcloud pc;
         // Generate the pointcloud and texture mappings
@@ -182,17 +180,16 @@ bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud){
 }
 
 // Get RGB values based on normals - texcoords, normals value [u v]
-std::tuple<uint8_t, uint8_t, uint8_t> RealSense::get_texcolor(rs2::video_frame texture, rs2::texture_coordinate texcoords)
-{
+std::tuple<uint8_t, uint8_t, uint8_t> RealSense::get_texcolor(rs2::video_frame texture, rs2::texture_coordinate texcoords) {
     const int w = texture.get_width(), h = texture.get_height();
-    
+
     // convert normals [u v] to basic coords [x y]
-    int x = std::min(std::max(int(texcoords.u*w + .5f), 0), w - 1);
-    int y = std::min(std::max(int(texcoords.v*h + .5f), 0), h - 1);
+    int x = std::min(std::max(int(texcoords.u * w + .5f), 0), w - 1);
+    int y = std::min(std::max(int(texcoords.v * h + .5f), 0), h - 1);
 
     int idx = x * texture.get_bytes_per_pixel() + y * texture.get_stride_in_bytes();
-    const auto texture_data = reinterpret_cast<const uint8_t*>(texture.get_data());
-    return std::tuple<uint8_t, uint8_t, uint8_t>(texture_data[idx], texture_data[idx+1], texture_data[idx+2]);
+    const auto texture_data = reinterpret_cast<const uint8_t *>(texture.get_data());
+    return std::tuple<uint8_t, uint8_t, uint8_t>(texture_data[idx], texture_data[idx + 1], texture_data[idx + 2]);
 }
 
 RealSense::~RealSense() {

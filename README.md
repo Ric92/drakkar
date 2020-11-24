@@ -33,6 +33,11 @@ sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/
 
 sudo apt-get install -y librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg
 ```
+## 💚&nbsp; STL to PCD
+
+* Convert yout STL file to PLY file with MeshLab.
+* Convert the PLY file into PCD using pcl_ply2pcd input.ply output.pcd
+
 
 ## 📘&nbsp; License
 The drakkar content management system is released under the under terms of the [MIT License](LICENSE).
