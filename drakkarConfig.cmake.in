@@ -1,0 +1,8 @@
+get_filename_component(drakkar_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include(CMakeFindDependencyMacro)
+
+find_dependency(PCL QUIET REQUIRED)
+
+if(NOT TARGET drakkar::drakkar)
+    include("${drakkar_CMAKE_DIR}/drakkarTargets.cmake")
+endif()
