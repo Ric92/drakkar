@@ -32,6 +32,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <pcl/common/transforms.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -63,10 +64,16 @@ int main(int argc, char const *argv[]) {
     viewer.setCameraPosition(1.59696, 0.285761, -3.40482, -0.084178, -0.989503, -0.117468);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr body (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scaled_body (new pcl::PointCloud<pcl::PointXYZRGB>);
     if(argc > 1){
         pcl::io::loadPCDFile (argv[1], *body);
-        viewer.addPointCloud<pcl::PointXYZRGB>(body, std::string("Entity"));
-        float timeout = 10;
+        Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+        transform (0,0) = transform (0,0) * 0.001;
+        transform (1,1) = transform (1,1) * 0.001;
+        transform (2,2) = transform (2,2) * 0.001;
+        pcl::transformPointCloud (*body, *scaled_body, transform); 
+        viewer.addPointCloud<pcl::PointXYZRGB>(scaled_body, std::string("Elephant"));
+        float timeout = 5;
         float currentTime = 0;
         auto start = std::chrono::high_resolution_clock::now();
 

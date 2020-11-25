@@ -69,6 +69,7 @@ bool RealSense::init() {
     rsAlign = new rs2::align(RS2_STREAM_COLOR);
 
     frames = pipe.wait_for_frames();
+
 }
 
 bool RealSense::grab() {
@@ -181,15 +182,26 @@ bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
 
 // Get RGB values based on normals - texcoords, normals value [u v]
 std::tuple<uint8_t, uint8_t, uint8_t> RealSense::get_texcolor(rs2::video_frame texture, rs2::texture_coordinate texcoords) {
-    const int w = texture.get_width(), h = texture.get_height();
+    // Get Width and Height coordinates of texture
+    int width  = texture.get_width();  // Frame width in pixels
+    int height = texture.get_height(); // Frame height in pixels
+    
+    // Normals to Texture Coordinates conversion
+    int x_value = std::min(std::max(int(texcoords.u * width  + .5f), 0), width - 1);
+    int y_value = std::min(std::max(int(texcoords.v * height + .5f), 0), height - 1);
 
-    // convert normals [u v] to basic coords [x y]
-    int x = std::min(std::max(int(texcoords.u * w + .5f), 0), w - 1);
-    int y = std::min(std::max(int(texcoords.v * h + .5f), 0), h - 1);
+    int bytes = x_value * texture.get_bytes_per_pixel();   // Get # of bytes per pixel
+    int strides = y_value * texture.get_stride_in_bytes(); // Get line width in bytes
+    int Text_Index =  (bytes + strides);
 
-    int idx = x * texture.get_bytes_per_pixel() + y * texture.get_stride_in_bytes();
-    const auto texture_data = reinterpret_cast<const uint8_t *>(texture.get_data());
-    return std::tuple<uint8_t, uint8_t, uint8_t>(texture_data[idx], texture_data[idx + 1], texture_data[idx + 2]);
+    const auto New_Texture = reinterpret_cast<const uint8_t*>(texture.get_data());
+    
+    // RGB components to save in tuple
+    int NT1 = New_Texture[Text_Index];
+    int NT2 = New_Texture[Text_Index + 1];
+    int NT3 = New_Texture[Text_Index + 2];
+
+    return std::tuple<int, int, int>(NT1, NT2, NT3);
 }
 
 RealSense::~RealSense() {
