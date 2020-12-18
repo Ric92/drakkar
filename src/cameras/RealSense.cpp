@@ -137,29 +137,23 @@ bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
             _cloud.push_back(point);
         }
     } else {
-        if (densecloud) {
-            _cloud.is_dense = false;
-            _cloud.width = depth_.cols / downsampleStep;
-            _cloud.height = depth_.rows / downsampleStep;
-        }
         for (int dy = 0; dy < depth_.rows; dy = dy + downsampleStep) {
             for (int dx = 0; dx < depth_.cols; dx = dx + downsampleStep) {
-                // Retrieve the 16-bit depth value and map it into a depth
-                // in meters
+                // Retrieve the 16-bit depth value and map it into a depth in meters
                 uint16_t depth_value = depth_.at<uint16_t>(dy, dx);
                 float depth_in_meters = depth_value * rsDepthScale;
                 pcl::PointXYZRGB point;
-                // Skip over pixels with a depth value of zero, which is
-                // used to indicate no data
+                // Skip over pixels with a depth value of zero, which is  used to indicate no data
                 if (depth_value == 0) {
                     if (densecloud) {
                         point.x = NAN;
                         point.y = NAN;
                         point.z = NAN;
                     }
+                    else
+                        continue;
                 } else {
-                    // Map from pixel coordinates in the depth image to
-                    // pixel coordinates in the color image
+                    // Map from pixel coordinates in the depth image to pixel coordinates in the color image
                     cv::Point2f depth_pixel(dx, dy);
                     float x = (depth_pixel.x - rsDepthIntrinsic.ppx) / rsDepthIntrinsic.fx;
                     float y = (depth_pixel.y - rsDepthIntrinsic.ppy) / rsDepthIntrinsic.fy;
@@ -173,9 +167,15 @@ bool RealSense::cloud(pcl::PointCloud<pcl::PointXYZRGB> &_cloud) {
                     point.g = rgb[1];
                     point.b = rgb[0];
 
-                    _cloud.push_back(point);
                 }
+                _cloud.push_back(point);
             }
+        }
+        if (densecloud) {
+            _cloud.is_dense = false;    // 666
+            _cloud.width = color_.cols / downsampleStep;
+            _cloud.height = color_.rows / downsampleStep;
+            _cloud.resize(_cloud.width * _cloud.height);
         }
     }
 }
